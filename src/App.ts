@@ -297,7 +297,11 @@ export default defineComponent({
                 </div>
                 <div class="answer-grid">
                   <button v-for="(choice, index) in currentQuestion.choices" :key="choice.id" class="answer-card" :class="{ selected: currentAnswer === choice.id, muted: currentAnswer && currentAnswer !== choice.id }" :style="{ '--choice-accent': choice.accent }" type="button" :aria-pressed="currentAnswer === choice.id" @click="selectAnswer(choice)">
-                    <span class="answer-art"><b class="answer-letter">{{ String.fromCharCode(65 + index) }}</b><i class="orbit-line"><i></i><i></i><i></i></i><small>{{ choice.scene }}</small></span>
+                    <span class="answer-art">
+                      <img :src="choice.image" alt="" decoding="async" />
+                      <b class="answer-letter">{{ String.fromCharCode(65 + index) }}</b>
+                      <small>{{ choice.scene }}</small>
+                    </span>
                     <span class="answer-copy"><strong>{{ choice.title }}</strong><small>{{ choice.description }}</small></span>
                     <span class="answer-check">✓</span>
                   </button>

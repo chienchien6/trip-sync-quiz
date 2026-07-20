@@ -7,7 +7,7 @@ const answer = (
   accent: string,
   scene: string,
   explorationScore: number,
-): Choice => ({ id, title, description, accent, scene, explorationScore });
+): Choice => ({ id, title, description, accent, scene, image: `/quiz-options/${id}.jpg`, explorationScore });
 
 export const questions: Question[] = [
   {

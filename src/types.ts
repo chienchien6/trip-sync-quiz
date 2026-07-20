@@ -8,6 +8,7 @@ export interface Choice {
   description: string;
   accent: string;
   scene: string;
+  image: string;
   explorationScore: number;
 }
 
