@@ -253,7 +253,7 @@ img { display: block; max-width: 100%; }
 .trait-row span { background: rgba(29, 41, 39, 0.07); }
 .result-button { margin-top: auto; background: var(--result-deep); color: #fff; }
 
-.motive-panel, .radar-panel, .selected-frequencies, .protocol-panel, .destinations-panel, .booking-panel { padding: 26px; }
+.motive-panel, .radar-panel, .compatibility-panel, .selected-frequencies, .protocol-panel, .destinations-panel, .booking-panel { padding: 26px; }
 .motive-panel { grid-column: span 7; background: var(--result-deep); color: #fff; }
 .motive-panel .eyebrow { color: color-mix(in srgb, var(--result-accent), #fff 35%); }
 .motive-panel h3 { max-width: 720px; margin: 18px 0 12px; font-size: 27px; line-height: 1.4; }
@@ -263,6 +263,20 @@ img { display: block; max-width: 100%; }
 .stat-row > div:first-child { display: flex; justify-content: space-between; font-size: 13px; }
 .stat-track { height: 7px; margin-top: 7px; overflow: hidden; border-radius: 999px; background: rgba(29, 41, 39, 0.1); }
 .stat-track i { display: block; height: 100%; border-radius: inherit; background: var(--result-accent); }
+.compatibility-panel { grid-column: 1 / -1; }
+.compatibility-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)) minmax(250px, 0.82fr); gap: 10px; margin-top: 22px; }
+.mate-card { display: grid; grid-template-columns: 112px minmax(0, 1fr); min-width: 0; min-height: 184px; overflow: hidden; border: 1px solid rgba(29, 41, 39, 0.1); border-radius: 7px; background: #fff; }
+.mate-avatar { min-width: 0; overflow: hidden; background: #fff; }
+.mate-avatar .alien-window { width: 100%; height: 100%; aspect-ratio: auto; }
+.mate-avatar .alien-window img { position: relative; top: 50%; transform: translateY(-50%); }
+.mate-card > div:last-child { padding: 20px 18px; border-left: 4px solid var(--result-accent); }
+.mate-card small, .travel-agreement small { color: var(--result-deep); font-size: 10px; font-weight: 900; }
+.mate-card h4 { margin: 6px 0 10px; color: var(--result-deep); font-size: 21px; }
+.mate-card p, .travel-agreement p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.6; }
+.friction-mate > div:last-child { border-left-color: var(--result-deep); }
+.travel-agreement { display: flex; min-width: 0; padding: 22px; border-radius: 7px; background: var(--result-deep); flex-direction: column; justify-content: center; }
+.travel-agreement small { color: color-mix(in srgb, var(--result-accent), #fff 42%); }
+.travel-agreement p { margin-top: 12px; color: rgba(255, 255, 255, 0.84); font-size: 13px; }
 .selected-frequencies { grid-column: span 8; }
 .protocol-panel { grid-column: span 4; }
 .panel-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; }
@@ -299,6 +313,20 @@ img { display: block; max-width: 100%; }
 .result-footer p { margin: 0; font-size: 18px; font-weight: 800; }
 .result-footer > div { display: flex; gap: 8px; }
 
+.share-modal-backdrop { position: fixed; z-index: 90; inset: 0; display: grid; padding: 24px; overflow-y: auto; place-items: center; background: rgba(18, 29, 27, 0.68); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+.share-modal { position: relative; display: grid; grid-template-columns: minmax(300px, 520px) minmax(280px, 360px); width: min(920px, 100%); max-height: calc(100svh - 48px); overflow: hidden; border-radius: 8px; background: var(--paper); box-shadow: 0 28px 80px rgba(10, 18, 16, 0.32); }
+.share-modal-close { position: absolute; z-index: 2; top: 12px; right: 12px; display: grid; width: 42px; height: 42px; padding: 0; place-items: center; border: 0; border-radius: 50%; background: rgba(29, 41, 39, 0.86); color: #fff; cursor: pointer; font-size: 26px; line-height: 1; }
+.share-card-preview { display: grid; min-height: 520px; overflow: auto; place-items: center; background: #dfe7e2; }
+.share-card-preview img { width: min(100%, 520px); height: auto; }
+.share-card-preview > p { color: var(--muted); font-size: 14px; font-weight: 850; }
+.share-modal-copy { display: flex; padding: 62px 30px 32px; flex-direction: column; }
+.share-modal-copy h2 { margin: 10px 0 14px; font-size: 30px; line-height: 1.22; }
+.share-modal-copy > p:not(.eyebrow) { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.7; }
+.share-modal-actions { display: grid; gap: 8px; margin-top: auto; padding-top: 28px; }
+.card-download { display: grid; place-items: center; background: var(--coral); color: #fff; text-decoration: none; }
+.card-download.disabled { pointer-events: none; opacity: 0.36; }
+.share-modal-copy > small { margin-top: 14px; color: var(--muted); font-size: 10px; }
+
 .toast-message { position: fixed; z-index: 80; right: 18px; bottom: 18px; max-width: calc(100% - 36px); padding: 14px 18px; border-radius: 8px; background: var(--ink); color: #fff; box-shadow: 0 16px 38px rgba(29, 41, 39, 0.22); font-size: 13px; font-weight: 800; }
 .toast-enter-active, .toast-leave-active { transition: opacity 180ms ease, transform 180ms ease; }
 .toast-enter-from, .toast-leave-to { opacity: 0; transform: translateY(10px); }
@@ -311,6 +339,8 @@ img { display: block; max-width: 100%; }
   .frequency-strip { grid-template-columns: repeat(7, 170px); }
   .result-alien, .result-summary { grid-column: span 6; }
   .selected-frequencies, .protocol-panel, .destinations-panel, .booking-panel { grid-column: span 6; }
+  .compatibility-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .travel-agreement { grid-column: 1 / -1; min-height: 130px; }
   .selected-frequency-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
@@ -387,7 +417,7 @@ img { display: block; max-width: 100%; }
   .result-intro { margin-bottom: 18px; }
   .result-intro h1 { font-size: 33px; }
   .result-bento { grid-template-columns: 1fr; gap: 8px; }
-  .result-alien, .result-summary, .motive-panel, .radar-panel, .selected-frequencies, .protocol-panel, .destinations-panel, .booking-panel { grid-column: 1; }
+  .result-alien, .result-summary, .motive-panel, .radar-panel, .compatibility-panel, .selected-frequencies, .protocol-panel, .destinations-panel, .booking-panel { grid-column: 1; }
   .result-alien { min-height: 640px; }
   .result-summary { min-height: 610px; padding: 24px 20px; }
   .result-summary > p:first-of-type { margin-top: 36px; }
@@ -395,6 +425,10 @@ img { display: block; max-width: 100%; }
   .result-summary h3 { font-size: 23px; }
   .result-description { font-size: 17px !important; }
   .motive-panel h3 { font-size: 22px; }
+  .compatibility-grid { grid-template-columns: 1fr; }
+  .mate-card { grid-template-columns: 96px minmax(0, 1fr); min-height: 170px; }
+  .mate-card > div:last-child { padding: 18px 14px; }
+  .travel-agreement { grid-column: auto; min-height: 146px; }
   .selected-frequency-grid { grid-template-columns: 1fr; }
   .selected-frequency-grid article { display: grid; grid-template-columns: 112px minmax(0, 1fr); }
   .selected-frequency-grid img { height: 100%; aspect-ratio: auto; }
@@ -405,6 +439,12 @@ img { display: block; max-width: 100%; }
   .destination-row h4 { font-size: 20px; }
   .result-footer { align-items: stretch; flex-direction: column; }
   .result-footer > div { flex-direction: column; }
+  .share-modal-backdrop { padding: 8px; place-items: start center; }
+  .share-modal { grid-template-columns: 1fr; max-height: none; }
+  .share-card-preview { min-height: 0; max-height: none; overflow: visible; }
+  .share-modal-copy { padding: 28px 18px 22px; }
+  .share-modal-copy h2 { font-size: 25px; }
+  .share-modal-actions { margin-top: 8px; }
 }
 
 @media (max-width: 380px) {

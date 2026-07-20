@@ -53,6 +53,15 @@ export interface Archetype {
   stats: Array<{ label: string; value: number }>;
 }
 
+export interface CompatibilityProfile {
+  archetypeId: ArchetypeId;
+  bestMatchId: ArchetypeId;
+  bestReason: string;
+  frictionMatchId: ArchetypeId;
+  frictionReason: string;
+  travelAgreement: string;
+}
+
 export interface Channel {
   id: ChannelId;
   member: string;

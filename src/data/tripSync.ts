@@ -1,4 +1,6 @@
-import type { Archetype, Channel, Choice, Question, TravelSettingOption } from '../types';
+import type { Archetype, Channel, Choice, CompatibilityProfile, Question, TravelSettingOption } from '../types';
+
+const assetPath = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, '')}`;
 
 const answer = (
   id: string,
@@ -7,7 +9,7 @@ const answer = (
   accent: string,
   scene: string,
   explorationScore: number,
-): Choice => ({ id, title, description, accent, scene, image: `/quiz-options/${id}.jpg`, explorationScore });
+): Choice => ({ id, title, description, accent, scene, image: assetPath(`/quiz-options/${id}.jpg`), explorationScore });
 
 export const questions: Question[] = [
   {
@@ -117,9 +119,44 @@ export const archetypes: Archetype[] = [
   },
 ];
 
+export const compatibilityProfiles: CompatibilityProfile[] = [
+  {
+    archetypeId: 'anchor',
+    bestMatchId: 'soft',
+    bestReason: '對方願意先確認回程與基本安排，也會帶你在安心範圍裡多看一點。',
+    frictionMatchId: 'seek',
+    frictionReason: '你需要可預期的基地，對方卻容易臨時追著新發現改道；住宿、回程與風險容忍度最容易不同步。',
+    travelAgreement: '先固定住宿與主要交通，再安排一天自由分隊；所有臨時改道都保留明確集合點。',
+  },
+  {
+    archetypeId: 'soft',
+    bestMatchId: 'flex',
+    bestReason: '你提供穩定主線，對方擅長在路上加入驚喜，兩個人很容易玩得剛剛好。',
+    frictionMatchId: 'seek',
+    frictionReason: '你願意探路，但仍需要可靠訊號；對方可能在資訊不足時就先出發，讓你來不及建立安全感。',
+    travelAgreement: '每天只開放一個未知行程，出發前先約好最晚決定時間與撤退方案。',
+  },
+  {
+    archetypeId: 'flex',
+    bestMatchId: 'seek',
+    bestReason: '對方負責發現地圖外的新訊號，你則能把靈感整理成真的走得完的路線。',
+    frictionMatchId: 'anchor',
+    frictionReason: '你把計畫當可調整的工具，對方把計畫當安心保證；臨時更動容易被理解成不可靠。',
+    travelAgreement: '先標出不能更動的預約，其餘時段明確標成可變動，改道前讓彼此都有否決權。',
+  },
+  {
+    archetypeId: 'seek',
+    bestMatchId: 'flex',
+    bestReason: '對方跟得上你的好奇心，也能在你追光追太遠時，把大家順利帶回主航線。',
+    frictionMatchId: 'anchor',
+    frictionReason: '你會因未知而興奮，對方則需要先降低不確定性；臨時邀請與沒做功課的路線最容易引發壓力。',
+    travelAgreement: '共同守住住宿與回程底線，另外留一段各自探索時間，不要求對方參加每一次冒險。',
+  },
+];
+
 export const channels: Channel[] = [
   {
-    id: 'luna', member: 'LUNA', title: '棲息基地頻道', role: '旅宿・療癒・慢旅行', image: '/characters/luna.jpg',
+    id: 'luna', member: 'LUNA', title: '棲息基地頻道', role: '旅宿・療癒・慢旅行', image: assetPath('/characters/luna.jpg'),
     accent: '#7caebf', deep: '#244e5c', soft: '#e4f0f2', description: '住得舒服，才有力氣喜歡一座城市。', tags: ['海景旅宿', '溫泉 SPA', '自由散步'],
     destinations: [
       { city: '馬德拉', country: '葡萄牙', match: 96, reason: '海景、溫和氣候與舒服的度假節奏。' },
@@ -133,7 +170,7 @@ export const channels: Channel[] = [
     ],
   },
   {
-    id: 'rin', member: 'RIN', title: '城市訊號頻道', role: '街區・咖啡・獨立店家', image: '/characters/rin.jpg',
+    id: 'rin', member: 'RIN', title: '城市訊號頻道', role: '街區・咖啡・獨立店家', image: assetPath('/characters/rin.jpg'),
     accent: '#e86f5f', deep: '#31485a', soft: '#f8dfd8', description: '沿著城市的小訊號，拐進值得停留的巷子。', tags: ['城市散步', '獨立店家', '展覽咖啡'],
     destinations: [
       { city: '里斯本', country: '葡萄牙', match: 97, reason: '坡道巷弄、設計小店與有性格的街區。' },
@@ -147,7 +184,7 @@ export const channels: Channel[] = [
     ],
   },
   {
-    id: 'mika', member: 'MIKA', title: '地球味覺頻道', role: '市場・美食・料理', image: '/characters/mika.jpg',
+    id: 'mika', member: 'MIKA', title: '地球味覺頻道', role: '市場・美食・料理', image: assetPath('/characters/mika.jpg'),
     accent: '#ed7563', deep: '#264d43', soft: '#f8e3d5', description: '用味道讀懂一座城市，比打卡更接近生活。', tags: ['市場巡禮', '美食散步', '料理體驗'],
     destinations: [
       { city: '那不勒斯', country: '義大利', match: 97, reason: '街頭味道、傳統餐桌與真誠的地方料理。' },
@@ -161,7 +198,7 @@ export const channels: Channel[] = [
     ],
   },
   {
-    id: 'tyler', member: 'TYLER', title: '自然能量頻道', role: '山海・森林・潛水', image: '/characters/tyler.jpg',
+    id: 'tyler', member: 'TYLER', title: '自然能量頻道', role: '山海・森林・潛水', image: assetPath('/characters/tyler.jpg'),
     accent: '#e7ad3f', deep: '#3f6757', soft: '#e8f0e9', description: '讓風、陽光與水，把身體的能量充回來。', tags: ['自然體驗', '山海森林', '潛水划船'],
     destinations: [
       { city: '南島', country: '紐西蘭', match: 98, reason: '湖泊、步道與適合不同體力的自然體驗。' },
@@ -175,7 +212,7 @@ export const channels: Channel[] = [
     ],
   },
   {
-    id: 'nora', member: 'NORA', title: '文明記憶頻道', role: '老城・故事・手作', image: '/characters/nora.jpg',
+    id: 'nora', member: 'NORA', title: '文明記憶頻道', role: '老城・故事・手作', image: assetPath('/characters/nora.jpg'),
     accent: '#a99bc4', deep: '#3f4056', soft: '#ece7f2', description: '收藏地方留下的故事，而不只是景點名稱。', tags: ['故事散步', '博物館', '工藝文化'],
     destinations: [
       { city: '布拉格', country: '捷克', match: 97, reason: '老城尺度、建築層次與容易沉浸的歷史。' },
@@ -189,7 +226,7 @@ export const channels: Channel[] = [
     ],
   },
   {
-    id: 'timo', member: 'TIMO', title: '航線導航頻道', role: '交通 PASS・票券・彈性組合', image: '/characters/timo.jpg',
+    id: 'timo', member: 'TIMO', title: '航線導航頻道', role: '交通 PASS・票券・彈性組合', image: assetPath('/characters/timo.jpg'),
     accent: '#4c7898', deep: '#30343a', soft: '#e4eaed', description: '先把移動整理好，把自由留給真正想玩的地方。', tags: ['交通 PASS', '快速通關', '彈性路線'],
     destinations: [
       { city: '蘇黎世', country: '瑞士', match: 96, reason: '交通準確、跨城容易，適合彈性收集風景。' },
@@ -203,7 +240,7 @@ export const channels: Channel[] = [
     ],
   },
   {
-    id: 'popo', member: 'POPO', title: '同行氣氛頻道', role: '親友・節慶・共同回憶', image: '/characters/popo.jpg',
+    id: 'popo', member: 'POPO', title: '同行氣氛頻道', role: '親友・節慶・共同回憶', image: assetPath('/characters/popo.jpg'),
     accent: '#d9a441', deep: '#514138', soft: '#f5e4c7', description: '讓每個同行的人都被照顧，也一起留下名場面。', tags: ['親友旅行', '節慶活動', '共同回憶'],
     destinations: [
       { city: '巴塞隆納', country: '西班牙', match: 96, reason: '熱鬧、好分享，也容易安排多人一起玩的內容。' },
