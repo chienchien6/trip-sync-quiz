@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex" />
+    <meta name="theme-color" content="#eef2ef" />
+    <title>重新導航｜TRIP SYNC</title>
+  </head>
+  <body>
+    <p>正在重新導航至 TRIP SYNC…</p>
+    <script>
+      (function () {
+        var marker = 'trip-sync-quiz';
+        var parts = window.location.pathname.split('/').filter(Boolean);
+        var markerIndex = parts.indexOf(marker);
+        var base = markerIndex >= 0 ? '/' + parts.slice(0, markerIndex + 1).join('/') + '/' : '/';
+        var route = markerIndex >= 0 ? parts.slice(markerIndex + 1).join('/') : parts.join('/');
+        window.location.replace(base + (route ? '#/' + encodeURIComponent(route) : '#/not-found'));
+      }());
+    </script>
+  </body>
+</html>

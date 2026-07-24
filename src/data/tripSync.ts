@@ -9,7 +9,8 @@ const answer = (
   accent: string,
   scene: string,
   explorationScore: number,
-): Choice => ({ id, title, description, accent, scene, image: assetPath(`/quiz-options/${id}.jpg`), explorationScore });
+  imageId = id,
+): Choice => ({ id, title, description, accent, scene, image: assetPath(`/quiz-options/${imageId}.jpg`), explorationScore });
 
 export const questions: Question[] = [
   {
@@ -17,6 +18,7 @@ export const questions: Question[] = [
     chapter: '訊號 01・降落座標',
     prompt: '地球傳來三組限時座標，你會降落在哪裡？',
     help: '不用選最合理的，選第一眼真正讓你心動的。',
+    scoreWeight: 1,
     choices: [
       answer('q1-a', '剛被發現的小城', '資料不多，但看起來充滿未知驚喜。', '#ef785f', '未知座標', 2),
       answer('q1-b', '熟悉城市＋陌生近郊', '經典與新鮮感，各占一半。', '#6f91be', '近軌支線', 1),
@@ -28,6 +30,7 @@ export const questions: Question[] = [
     chapter: '訊號 02・航線準備',
     prompt: '出發前一週，你的地球航線通常準備到什麼程度？',
     help: '想像是真的明天出發，而不是理想中的自己。',
+    scoreWeight: 1,
     choices: [
       answer('q2-a', '只先訂第一晚', '其他抵達後再決定，新發現比原定計畫重要。', '#ef785f', '自由變軌', 2),
       answer('q2-b', '重點先訂，其餘留白', '需要方向，也想保留一些驚喜。', '#6f91be', '彈性航線', 1),
@@ -39,6 +42,7 @@ export const questions: Question[] = [
     chapter: '訊號 03・陌生味覺',
     prompt: '看不懂菜單的地球餐館，店員推薦一道陌生料理，你會？',
     help: '這題沒有勇敢或膽小，只有讓你舒服的選擇。',
+    scoreWeight: 1,
     choices: [
       answer('q3-a', '就點它', '旅行就是要試試沒吃過的。', '#ef785f', '未知味覺', 2),
       answer('q3-b', '先問清楚再嘗試', '了解口味與食材，覺得可以就出發。', '#6f91be', '快速掃描', 1),
@@ -47,13 +51,14 @@ export const questions: Question[] = [
   },
   {
     id: 4,
-    chapter: '訊號 04・夜間邀請',
-    prompt: '地球居民邀請你參加今晚的街區活動，你會？',
-    help: '現場沒有認識的人，也沒有預先看過評價。',
+    chapter: '訊號 04・社交電量',
+    prompt: '行程突然多出一個自由下午，你最想怎麼恢復能量？',
+    help: '不是問你合不合群，而是哪種狀態真正能讓你充電。',
+    scoreWeight: 0,
     choices: [
-      answer('q4-a', '直接加入', '說不定會接收到有趣的新訊號。', '#ef785f', '加入頻率', 2),
-      answer('q4-b', '先看看氣氛', '舒服的話，就多待一會兒。', '#6f91be', '外圍觀測', 1),
-      answer('q4-c', '照原本航線走', '謝謝邀請，我還是喜歡可預期的安排。', '#c89a42', '維持軌道', 0),
+      answer('q4-a', '加入一場在地小團活動', '和新認識的人一起體驗，會讓我更有精神。', '#ef785f', '人群點火', 0),
+      answer('q4-b', '找一兩位同行者散步', '有人分享，也保留舒服的交流距離。', '#6f91be', '小隊共振', 0),
+      answer('q4-c', '自己找間店或公園待著', '不必說話的自由時間，才是真的休息。', '#c89a42', '獨處充電', 0),
     ],
   },
   {
@@ -61,6 +66,7 @@ export const questions: Question[] = [
     chapter: '訊號 05・航線中斷',
     prompt: '原定列車停駛，星圖出現一條沒研究過的替代路線，你會？',
     help: '安全確認沒有問題，現在只差你做決定。',
+    scoreWeight: 1,
     choices: [
       answer('q5-a', '走走看', '意外航線可能才是今天的亮點。', '#ef785f', '驚喜變軌', 2),
       answer('q5-b', '確認資訊再決定', '有一點可靠訊號，我就願意改走。', '#6f91be', '短暫校準', 1),
@@ -69,13 +75,26 @@ export const questions: Question[] = [
   },
   {
     id: 6,
-    chapter: '訊號 06・地球日誌',
+    chapter: '訊號 06・小隊改道',
+    prompt: '同行者突然想去完全不同的地方，你通常會？',
+    help: '想像你們都很期待自己的選擇，而且時間只夠完成一種安排。',
+    scoreWeight: 0,
+    choices: [
+      answer('q6-a', '一起重排行程', '各自保留最在意的地方，再找出兩人都能接受的路線。', '#ef785f', '共同變軌', 0),
+      answer('q6-b', '分頭探索再集合', '不必勉強同步，約好時間與地點就可以。', '#6f91be', '雙線任務', 0),
+      answer('q6-c', '維持原本的主線', '新願望另外找空檔，先守住原本共同決定的安排。', '#c89a42', '主線守航', 0),
+    ],
+  },
+  {
+    id: 7,
+    chapter: '訊號 07・地球日誌',
     prompt: '任務結束後，你最希望怎麼記錄這趟地球旅行？',
     help: '這句話會成為你的星際旅行日誌標題。',
+    scoreWeight: 0.5,
     choices: [
-      answer('q6-a', '去了很少人知道的地方', '未知與獨特，會讓我覺得這趟很值得。', '#ef785f', '地圖之外', 2),
-      answer('q6-b', '經典與驚喜都有', '該看的有看到，也遇見幾個意外。', '#6f91be', '雙軌平衡', 1),
-      answer('q6-c', '一路順暢、舒服沒踩雷', '安心與品質就是最好的回憶。', '#c89a42', '完美著陸', 0),
+      answer('q7-a', '去了很少人知道的地方', '未知與獨特，會讓我覺得這趟很值得。', '#ef785f', '地圖之外', 2, 'q1-a'),
+      answer('q7-b', '經典與驚喜都有', '該看的有看到，也遇見幾個意外。', '#6f91be', '雙軌平衡', 1, 'q1-b'),
+      answer('q7-c', '一路順暢、舒服沒踩雷', '安心與品質就是最好的回憶。', '#c89a42', '完美著陸', 0, 'q1-c'),
     ],
   },
 ];
@@ -86,6 +105,7 @@ export const archetypes: Archetype[] = [
     description: '你會先確認住宿、交通與安全感，再放心探索。熟悉感不是保守，而是讓大腦真正開始休假的基地。',
     innerLine: '先讓我確定今晚睡哪裡。', motive: '你的心理推力來自休息、恢復與降低不確定性。',
     routeAdvice: '先鎖定可靠住宿與主要交通，再從基地向外安排短距離探索。',
+    bigFiveSummary: '你的答案顯示開放性偏穩健，對計畫與可預測性的需求較高。你不是拒絕新鮮，而是有了可靠基地後，更能放心享受探索。',
     min: 0, max: 3, imageIndex: 0, accent: '#d6a64b', deep: '#243d62', soft: '#edf1f6',
     traits: ['基地優先', '資訊完整', '品質安心'],
     stats: [{ label: '安定需求', value: 96 }, { label: '路線掌握', value: 88 }, { label: '未知容許', value: 38 }],
@@ -95,6 +115,7 @@ export const archetypes: Archetype[] = [
     description: '你以熟悉為基地，再加入剛剛好的新鮮感。想前進，但會先知道怎麼回來。',
     innerLine: '看起來很有趣，我先查一下怎麼回來。', motive: '你的心理推力來自安全範圍內的成長與發現。',
     routeAdvice: '以成熟城市為主軸，加入一段陌生近郊、在地活動或自由散步。',
+    bigFiveSummary: '你的開放性與計畫傾向相當均衡：願意接近陌生事物，也會先建立必要資訊。這讓你特別適合「有主線、可探路」的旅行。',
     min: 4, max: 6, imageIndex: 1, accent: '#7395c8', deep: '#405b86', soft: '#edf1fa',
     traits: ['穩定主線', '小幅冒險', '進退有據'],
     stats: [{ label: '安定需求', value: 79 }, { label: '路線彈性', value: 68 }, { label: '未知容許', value: 61 }],
@@ -104,6 +125,7 @@ export const archetypes: Archetype[] = [
     description: '你需要方向，但不需要每一步都固定。原本路線和新選項可以同時存在，計畫是工具，不是規則。',
     innerLine: '方向有就好，途中改一下也沒關係。', motive: '你的心理推力來自自主感、選擇權與當下發現。',
     routeAdvice: '只先預約不能錯過的項目，每天保留至少三分之一空白時間。',
+    bigFiveSummary: '你的開放性偏高，同時保有實際的方向感。你願意嘗試新路線，但更重視自己能否隨情況調整，而不是毫無準備地冒險。',
     min: 7, max: 9, imageIndex: 2, accent: '#ef785f', deep: '#a74737', soft: '#fff0eb',
     traits: ['方向明確', '隨時變軌', '現場決定'],
     stats: [{ label: '自主導航', value: 96 }, { label: '路線彈性', value: 98 }, { label: '未知容許', value: 78 }],
@@ -113,6 +135,7 @@ export const archetypes: Archetype[] = [
     description: '未知帶來的興奮高於不安。你會被地圖沒有畫完的地方、陌生文化與稀有體驗吸引。',
     innerLine: '那道光是什麼？先去看看再說。', motive: '你的心理推力來自新奇、突破邊界與自我擴張。',
     routeAdvice: '選一個真正陌生的主題，保留臨場決定空間，同時設定最基本的安全回程點。',
+    bigFiveSummary: '你的開放性與新奇需求較高，面對不確定時更容易先感到好奇。新文化、少見體驗與尚未完成的地圖，通常比熟悉流程更能驅動你。',
     min: 10, max: 12, imageIndex: 3, accent: '#8b62c5', deep: '#583a89', soft: '#f2ecfb',
     traits: ['未知優先', '新奇驅動', '邊界探索'],
     stats: [{ label: '新奇渴望', value: 99 }, { label: '臨場反應', value: 91 }, { label: '未知容許', value: 98 }],

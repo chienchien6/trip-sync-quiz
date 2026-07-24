@@ -1,4 +1,8 @@
-import { computed, defineComponent, nextTick, ref } from 'vue';
+import { computed, defineComponent, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
+import GlobalPlanner from './components/GlobalPlanner';
+import SiteFooter from './components/SiteFooter';
+import SiteHeader from './components/SiteHeader';
+import TrustPage from './components/TrustPage';
 import {
   archetypes,
   avoidOptions,
@@ -9,14 +13,24 @@ import {
   paceOptions,
   questions,
 } from './data/tripSync';
+import { sitePageIds, sitePages } from './data/sitePages';
 import type { Archetype, ChannelId, Choice, TravelSettingOption } from './types';
+import type { SitePageId } from './data/sitePages';
 
 type Step = 'landing' | 'quiz' | 'channels' | 'settings' | 'result';
 
 export default defineComponent({
   name: 'App',
+  components: { GlobalPlanner, SiteFooter, SiteHeader, TrustPage },
   setup() {
     const step = ref<Step>('landing');
+    const routeFromHash = (): SitePageId | 'home' => {
+      const route = decodeURIComponent(window.location.hash.replace(/^#\/?/, '')).replace(/\/$/, '');
+      if (!route || route === 'home') return 'home';
+      return sitePageIds.includes(route as SitePageId) ? route as SitePageId : 'not-found';
+    };
+    const sitePage = ref<SitePageId | 'home'>(routeFromHash());
+    const activeSitePage = computed(() => sitePage.value === 'home' ? sitePages.about : sitePages[sitePage.value]);
     const currentQuestionIndex = ref(0);
     const answers = ref<Record<number, string>>({});
     const selectedChannelIds = ref<ChannelId[]>([]);
@@ -31,12 +45,54 @@ export default defineComponent({
     const shareCardBlob = ref<Blob | null>(null);
     const explorerImageUrl = `${import.meta.env.BASE_URL}characters/explorers.png`;
 
+    const updateDocumentMetadata = () => {
+      const page = sitePage.value === 'home' ? null : sitePages[sitePage.value];
+      document.title = page ? `${page.title}｜TRIP SYNC` : 'TRIP SYNC｜旅遊人格測驗與行程規劃助手';
+      document.querySelector<HTMLMetaElement>('meta[name="description"]')?.setAttribute(
+        'content',
+        page?.description ?? 'TRIP SYNC 地球探索人格測驗與全球行程規劃助手，依人格、興趣、月份、預算及避雷條件推薦目的地。',
+      );
+    };
+
+    const syncSiteRoute = () => {
+      sitePage.value = routeFromHash();
+      if (sitePage.value !== 'home') step.value = 'landing';
+      updateDocumentMetadata();
+      nextTick(() => window.scrollTo({ top: 0 }));
+    };
+
+    const navigateToSitePage = (page: SitePageId | 'home') => {
+      if (page === 'home') step.value = 'landing';
+      const nextHash = page === 'home' ? '#/' : `#/${page}`;
+      if (window.location.hash === nextHash) {
+        sitePage.value = page;
+        updateDocumentMetadata();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+      window.location.hash = nextHash;
+    };
+
+    onMounted(() => {
+      updateDocumentMetadata();
+      window.addEventListener('hashchange', syncSiteRoute);
+    });
+
+    onBeforeUnmount(() => window.removeEventListener('hashchange', syncSiteRoute));
+
     const currentQuestion = computed(() => questions[currentQuestionIndex.value]);
     const currentAnswer = computed(() => answers.value[currentQuestion.value.id]);
-    const explorationScore = computed(() => questions.reduce((total, question) => {
-      const selected = question.choices.find((choice) => choice.id === answers.value[question.id]);
-      return total + (selected?.explorationScore ?? 0);
-    }, 0));
+    const explorationScore = computed(() => {
+      const weightedTotal = questions.reduce((total, question) => {
+        const selected = question.choices.find((choice) => choice.id === answers.value[question.id]);
+        return total + (selected?.explorationScore ?? 0) * question.scoreWeight;
+      }, 0);
+      const weightedMaximum = questions.reduce((total, question) => {
+        const maximum = Math.max(...question.choices.map((choice) => choice.explorationScore));
+        return total + maximum * question.scoreWeight;
+      }, 0);
+      return weightedMaximum ? Math.round((weightedTotal / weightedMaximum) * 12) : 0;
+    });
     const archetype = computed(() => archetypes.find((item) => explorationScore.value >= item.min && explorationScore.value <= item.max) ?? archetypes[0]);
     const compatibility = computed(() => compatibilityProfiles.find((item) => item.archetypeId === archetype.value.id) ?? compatibilityProfiles[0]);
     const bestMatch = computed(() => archetypes.find((item) => item.id === compatibility.value.bestMatchId) ?? archetypes[0]);
@@ -45,44 +101,29 @@ export default defineComponent({
 
     const progress = computed(() => {
       if (step.value === 'landing') return 0;
-      if (step.value === 'quiz') return Math.round(((currentQuestionIndex.value + (currentAnswer.value ? 1 : 0)) / 8) * 100);
-      if (step.value === 'channels') return selectedChannelIds.value.length ? 88 : 75;
+      if (step.value === 'quiz') return Math.round(((currentQuestionIndex.value + (currentAnswer.value ? 1 : 0)) / (questions.length + 2)) * 100);
+      if (step.value === 'channels') return selectedChannelIds.value.length ? 89 : 78;
       return 100;
     });
+
+    const socialProfiles = {
+      'q4-a': { label: '人群點火型', description: '新的互動與共同體驗，通常能替你的旅程補充能量。' },
+      'q4-b': { label: '小隊共振型', description: '你偏好少量而有品質的陪伴，分享與安靜都要剛剛好。' },
+      'q4-c': { label: '獨處充電型', description: '保留不必配合別人的時間，能讓你重新找回旅行節奏。' },
+    } as const;
+    const coordinationProfiles = {
+      'q6-a': { label: '一起重排型', description: '你傾向透過討論重新組合需求，讓同行者都保留重要體驗。' },
+      'q6-b': { label: '分頭探索型', description: '你尊重彼此的旅行自主權，不需要每段行程都綁在一起。' },
+      'q6-c': { label: '主線守航型', description: '你重視共同承諾，傾向先完成原本安排，再處理臨時願望。' },
+    } as const;
+    const socialProfile = computed(() => socialProfiles[answers.value[4] as keyof typeof socialProfiles] ?? socialProfiles['q4-b']);
+    const coordinationProfile = computed(() => coordinationProfiles[answers.value[6] as keyof typeof coordinationProfiles] ?? coordinationProfiles['q6-a']);
 
     const phaseLabel = computed(() => {
       if (step.value === 'quiz') return `人格校準 ${currentQuestionIndex.value + 1} / ${questions.length}`;
       if (step.value === 'channels') return '本次任務頻道';
       if (step.value === 'settings') return '飛行條件設定';
       return '探索報告';
-    });
-
-    const destinationMatches = computed(() => {
-      const chosen = selectedChannels.value.length ? selectedChannels.value : [channels[0]];
-      const pool = chosen.flatMap((channel, channelIndex) => channel.destinations.map((destination, destinationIndex) => ({
-        ...destination,
-        channel,
-        order: destinationIndex * chosen.length + channelIndex,
-      })));
-      const seen = new Set<string>();
-      return pool
-        .sort((a, b) => a.order - b.order)
-        .filter((destination) => {
-          if (seen.has(destination.city)) return false;
-          seen.add(destination.city);
-          return true;
-        })
-        .slice(0, 3)
-        .map((destination, index) => ({ ...destination, match: Math.max(83, destination.match - index * 2) }));
-    });
-
-    const bookingSlots = computed(() => {
-      const chosen = selectedChannels.value.length ? selectedChannels.value : [channels[0]];
-      const providers = ['Klook', 'KKday', 'Trip.com'] as const;
-      return providers.map((provider, index) => {
-        const channel = chosen[index % chosen.length];
-        return channel.affiliateSlots.find((slot) => slot.provider === provider) ?? channel.affiliateSlots[0];
-      });
     });
 
     const settingLabel = (options: TravelSettingOption[], id: string) => options.find((item) => item.id === id)?.label ?? '';
@@ -94,6 +135,9 @@ export default defineComponent({
     };
 
     const startQuiz = () => {
+      sitePage.value = 'home';
+      if (window.location.hash) window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
+      updateDocumentMetadata();
       answers.value = {};
       currentQuestionIndex.value = 0;
       selectedChannelIds.value = [];
@@ -153,7 +197,7 @@ export default defineComponent({
       nextTick(() => window.scrollTo({ top: 0 }));
     };
 
-    const scrollToRecommendations = () => document.querySelector('#destination-matches')?.scrollIntoView({ behavior: 'smooth' });
+    const scrollToRecommendations = () => document.querySelector('#global-planner')?.scrollIntoView({ behavior: 'smooth' });
 
     const shareText = computed(() => {
       const frequencies = selectedChannels.value.map((channel) => channel.title.replace('頻道', '')).join(' × ');
@@ -379,6 +423,8 @@ export default defineComponent({
 
     return {
       step,
+      sitePage,
+      activeSitePage,
       questions,
       archetypes,
       channels,
@@ -396,6 +442,8 @@ export default defineComponent({
       bestMatch,
       frictionMatch,
       explorationScore,
+      socialProfile,
+      coordinationProfile,
       selectedChannelIds,
       selectedChannels,
       pace,
@@ -403,13 +451,12 @@ export default defineComponent({
       budget,
       avoids,
       avoidLabels,
-      destinationMatches,
-      bookingSlots,
       toast,
       shareCardOpen,
       shareCardBusy,
       shareCardUrl,
       explorerImageUrl,
+      navigateToSitePage,
       startQuiz,
       selectAnswer,
       nextQuestion,
@@ -430,14 +477,14 @@ export default defineComponent({
   },
   template: `
     <main class="app-shell">
-      <section v-if="step === 'landing'" class="landing-page">
-        <header class="top-nav glass-panel">
-          <a class="brand" href="#" aria-label="Trip Sync 首頁">
-            <span class="brand-mark">TS</span>
-            <span><b>TRIP SYNC</b><small>地球探索計畫</small></span>
-          </a>
-          <button class="nav-link" type="button" @click="scrollToArchetypes">認識四種人格</button>
-        </header>
+      <section v-if="sitePage !== 'home'" class="content-page-shell">
+        <SiteHeader :active-page="sitePage" mode="content" @navigate="navigateToSitePage" @start-quiz="startQuiz" />
+        <TrustPage :page="activeSitePage" @navigate="navigateToSitePage" @start-quiz="startQuiz" />
+        <SiteFooter @navigate="navigateToSitePage" />
+      </section>
+
+      <section v-else-if="step === 'landing'" class="landing-page">
+        <SiteHeader :active-page="sitePage" @navigate="navigateToSitePage" @start-quiz="startQuiz" />
 
         <section class="hero-section">
           <img class="hero-crew" :src="explorerImageUrl" alt="安心靠岸、安心探路、彈性開路與未知追光四位地球探索者" />
@@ -445,18 +492,19 @@ export default defineComponent({
           <div class="hero-copy">
             <p class="eyebrow">EARTH EXPLORATION PROGRAM</p>
             <h1>重新啟動你的<br />地球探索模式</h1>
-            <p class="hero-lead">我們都是降落地球的宇宙旅人。用 6 個旅行情境，找回你原本面對未知的導航方式。</p>
+            <p class="hero-lead">我們都是降落地球的宇宙旅人。用 7 個旅行情境，找回你原本面對未知的導航方式。</p>
             <div class="hero-actions">
               <button class="primary-button coral" type="button" @click="startQuiz">開始校準 <span>約 90 秒</span></button>
               <button class="text-button" type="button" @click="scrollToArchetypes">先看四種模式 ↓</button>
             </div>
-            <div class="hero-meta"><span>不需登入</span><span>4 種探索人格</span><span>7 個任務頻道</span><span>全球目的地推薦</span></div>
+            <div class="hero-meta"><span>不需登入</span><span>4 種探索人格</span><span>7 個任務頻道</span><span>180 個目的地候選</span></div>
+            <p class="method-note"><b>測驗依據</b> 參考 Big Five 五大人格中的開放性、盡責性與外向性，並結合旅行中的新奇／熟悉偏好。這是旅行偏好分析，不是心理診斷。</p>
           </div>
         </section>
 
         <section id="archetypes" class="archetype-section">
           <div class="section-heading">
-            <div><p class="eyebrow">YOUR NAVIGATION SYSTEM</p><h2>你不是喜歡什麼，<br />而是怎麼靠近未知。</h2></div>
+            <div><p class="eyebrow">YOUR NAVIGATION SYSTEM</p><h2>你是怎麼靠近未知</h2></div>
             <p>人格描述相對穩定的探索方式；旅宿、美食、自然與文化，則是每趟旅行都可能重新選擇的任務重點。</p>
           </div>
           <div class="archetype-grid">
@@ -487,11 +535,12 @@ export default defineComponent({
         </section>
 
         <section class="system-section">
-          <article><b>01</b><h3>校準人格</h3><p>6 個故事情境，找出你如何面對陌生、風險與改變。</p></article>
+          <article><b>01</b><h3>校準人格</h3><p>7 個故事情境，找出你如何面對陌生、風險、社交與改變。</p></article>
           <article><b>02</b><h3>打開頻道</h3><p>選擇 1～3 個這趟最重要的旅行主題，不必只當一種人。</p></article>
           <article><b>03</b><h3>設定條件</h3><p>加入節奏、同行方式、預算與避雷條件，讓推薦真的可行。</p></article>
           <div class="system-cta"><p>地球很大，先找回你的導航方式。</p><button class="primary-button dark" type="button" @click="startQuiz">開始地球任務 →</button></div>
         </section>
+        <SiteFooter @navigate="navigateToSitePage" />
       </section>
 
       <template v-else-if="step !== 'result'">
@@ -555,7 +604,7 @@ export default defineComponent({
       </template>
 
       <section v-else class="result-page" :style="resultVariables">
-        <header class="result-nav glass-panel"><a class="brand" href="#" @click.prevent="step = 'landing'"><span class="brand-mark">TS</span><span><b>TRIP SYNC</b><small>地球探索報告</small></span></a><div><button class="icon-text-button" type="button" @click="openResultCardPreview">製作 IG 卡 ↗</button><button class="icon-text-button desktop-only" type="button" @click="startQuiz">重新校準</button></div></header>
+        <header class="result-nav glass-panel"><button class="brand brand-button" type="button" @click="navigateToSitePage('home')"><span class="brand-mark">TS</span><span><b>TRIP SYNC</b><small>地球探索報告</small></span></button><div><button class="icon-text-button" type="button" @click="openResultCardPreview">製作 IG 卡 ↗</button><button class="icon-text-button desktop-only" type="button" @click="startQuiz">重新校準</button></div></header>
 
         <div class="result-intro"><p class="eyebrow">YOUR EARTH EXPLORATION MODE</p><h1>你的宇宙導航系統，已重新上線。</h1></div>
 
@@ -567,11 +616,35 @@ export default defineComponent({
             <p class="result-description">{{ archetype.description }}</p>
             <blockquote>「{{ archetype.innerLine }}」</blockquote>
             <div class="trait-row"><span v-for="trait in archetype.traits" :key="trait">{{ trait }}</span></div>
-            <button class="primary-button result-button" type="button" @click="scrollToRecommendations">查看我的地球座標 ↓</button>
+            <button class="primary-button result-button" type="button" @click="scrollToRecommendations">啟動全球目的地搜尋 ↓</button>
           </section>
 
           <section class="motive-panel bento-panel"><p class="eyebrow">你的探索推力</p><h3>{{ archetype.motive }}</h3><p>{{ archetype.routeAdvice }}</p></section>
           <section class="radar-panel bento-panel"><p class="eyebrow">導航雷達</p><div v-for="stat in archetype.stats" :key="stat.label" class="stat-row"><div><span>{{ stat.label }}</span><b>{{ stat.value }}</b></div><div class="stat-track"><i :style="{ width: stat.value + '%' }"></i></div></div></section>
+
+          <section class="evidence-panel bento-panel">
+            <div class="panel-heading"><div><p class="eyebrow">WHY THIS MODE</p><h3>為什麼你是這一型？</h3></div><span>主人格與本次同行習慣分開解讀</span></div>
+            <p class="big-five-summary">{{ archetype.bigFiveSummary }}</p>
+            <div class="signal-profile-grid">
+              <article><small>社交電量</small><h4>{{ socialProfile.label }}</h4><p>{{ socialProfile.description }}</p></article>
+              <article><small>同行協調</small><h4>{{ coordinationProfile.label }}</h4><p>{{ coordinationProfile.description }}</p></article>
+              <article><small>判定方式</small><h4>導航人格 × 輔助訊號</h4><p>01、02、03、05 與低權重的 07 決定主人格；04、06 只補充你的社交與同行偏好。</p></article>
+            </div>
+            <details class="theory-details">
+              <summary><span>我們怎麼判斷？</span><small>查看完整理論與四型對照</small></summary>
+              <div class="theory-content">
+                <p>本測驗參考 Big Five 人格架構中與旅行行為較相關的開放性、盡責性與外向性，並加入旅行情境裡的新奇／熟悉偏好。四種類型是方便理解旅行決策的趣味化標籤，不等同完整人格分類。</p>
+                <div class="theory-table" role="table" aria-label="四種旅行人格與五大人格解讀">
+                  <div class="theory-row theory-head" role="row"><b role="columnheader">旅行人格</b><b role="columnheader">最接近的五大人格解讀</b></div>
+                  <div class="theory-row" role="row"><strong role="cell">安心靠岸型</strong><span role="cell">開放性偏低至中等，對秩序、資訊完整與可預測性的需求較高。</span></div>
+                  <div class="theory-row" role="row"><strong role="cell">安心探路型</strong><span role="cell">開放性中等，準備與探索傾向均衡，喜歡在可靠範圍內接近新事物。</span></div>
+                  <div class="theory-row" role="row"><strong role="cell">彈性開路型</strong><span role="cell">開放性偏高，重視自主與調整空間，會把計畫當成可變動的工具。</span></div>
+                  <div class="theory-row" role="row"><strong role="cell">未知追光型</strong><span role="cell">開放性較高，新奇與刺激需求較強，對陌生環境的好奇通常高於不安。</span></div>
+                </div>
+                <p class="theory-caution">外向不等於愛冒險，獨處也不等於保守；因此社交電量不參與四型總分。結果只反映這次回答所呈現的旅行偏好，不供醫療、心理診斷或人員篩選使用。</p>
+              </div>
+            </details>
+          </section>
 
           <section class="compatibility-panel bento-panel">
             <div class="panel-heading"><div><p class="eyebrow">TRAVEL COMPANION SYNC</p><h3>你的旅伴同步雷達</h3></div><span>不是誰比較好，而是面對未知的節奏是否一致</span></div>
@@ -592,12 +665,18 @@ export default defineComponent({
 
           <section class="protocol-panel bento-panel"><p class="eyebrow">本次飛行設定</p><div class="protocol-row"><span>旅行節奏</span><b>{{ settingLabel(paceOptions, pace) }}</b></div><div class="protocol-row"><span>同行方式</span><b>{{ settingLabel(companionOptions, companion) }}</b></div><div class="protocol-row"><span>消費模式</span><b>{{ settingLabel(budgetOptions, budget) }}</b></div><div class="protocol-row"><span>避開條件</span><b>{{ avoidLabels.length ? avoidLabels.join('、') : '沒有特別限制' }}</b></div><small>避雷條件不會加入公開分享文字。</small></section>
 
-          <section id="destination-matches" class="destinations-panel bento-panel"><div class="panel-heading"><div><p class="eyebrow">GLOBAL LANDING COORDINATES</p><h3>先從這三個地球座標開始</h3></div><span>依人格 × 頻道 × 本次條件初步推薦</span></div><article v-for="(destination, index) in destinationMatches" :key="destination.city" class="destination-row"><span>0{{ index + 1 }}</span><div><small>{{ destination.channel.title }}</small><h4>{{ destination.city }}</h4><p>{{ destination.country }} · {{ destination.reason }}</p></div><b>{{ destination.match }}%</b></article></section>
-
-          <aside class="booking-panel bento-panel"><p class="eyebrow">推薦的任務裝備</p><h3>先看適合原因，再決定要不要訂</h3><a v-for="slot in bookingSlots" :key="slot.provider" :href="slot.href" target="_blank" rel="sponsored noopener"><span><b>{{ slot.provider }}</b>{{ slot.label }}</span><strong>{{ slot.cta }} →</strong></a><small>合作連結示意。正式上線時將清楚標示聯盟關係。</small></aside>
+          <GlobalPlanner
+            :archetype-id="archetype.id"
+            :channel-ids="selectedChannelIds"
+            :pace="pace"
+            :companion="companion"
+            :budget-mode="budget"
+            :avoid-ids="avoids"
+          />
         </div>
 
         <footer class="result-footer"><p>人格描述你的導航方式，頻道決定這趟想看見的地球。</p><div><button class="primary-button dark" type="button" @click="openResultCardPreview">製作 IG 人格卡</button><button class="text-button" type="button" @click="startQuiz">重新校準</button></div></footer>
+        <SiteFooter @navigate="navigateToSitePage" />
       </section>
 
       <div v-if="shareCardOpen" class="share-modal-backdrop" role="presentation" @click.self="closeResultCardPreview">

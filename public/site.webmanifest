@@ -1,0 +1,18 @@
+{
+  "name": "TRIP SYNC 旅行人格與行程規劃",
+  "short_name": "TRIP SYNC",
+  "description": "依人格、任務、月份、預算與避雷條件推薦全球目的地。",
+  "start_url": "/trip-sync-quiz/",
+  "scope": "/trip-sync-quiz/",
+  "display": "standalone",
+  "background_color": "#eef2ef",
+  "theme_color": "#1d2927",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

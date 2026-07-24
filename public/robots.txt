@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://chienchien6.github.io/trip-sync-quiz/sitemap.xml
