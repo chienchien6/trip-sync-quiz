@@ -1,5 +1,7 @@
 import { computed, defineComponent, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 import GlobalPlanner from './components/GlobalPlanner';
+import GuideArticle from './components/GuideArticle';
+import GuidesIndex from './components/GuidesIndex';
 import SiteFooter from './components/SiteFooter';
 import SiteHeader from './components/SiteHeader';
 import TrustPage from './components/TrustPage';
@@ -14,23 +16,38 @@ import {
   questions,
 } from './data/tripSync';
 import { sitePageIds, sitePages } from './data/sitePages';
+import { guideBySlug, travelGuides } from './data/guides';
 import type { Archetype, ChannelId, Choice, TravelSettingOption } from './types';
 import type { SitePageId } from './data/sitePages';
+import type { TravelGuide } from './data/guides';
 
 type Step = 'landing' | 'quiz' | 'channels' | 'settings' | 'result';
+type SiteRoute = SitePageId | 'home' | 'guides' | 'guide';
 
 export default defineComponent({
   name: 'App',
-  components: { GlobalPlanner, SiteFooter, SiteHeader, TrustPage },
+  components: { GlobalPlanner, GuideArticle, GuidesIndex, SiteFooter, SiteHeader, TrustPage },
   setup() {
     const step = ref<Step>('landing');
-    const routeFromHash = (): SitePageId | 'home' => {
+    const routeFromHash = (): { page: SiteRoute; guideSlug: string } => {
       const route = decodeURIComponent(window.location.hash.replace(/^#\/?/, '')).replace(/\/$/, '');
-      if (!route || route === 'home') return 'home';
-      return sitePageIds.includes(route as SitePageId) ? route as SitePageId : 'not-found';
+      if (!route || route === 'home') return { page: 'home', guideSlug: '' };
+      if (route === 'guides') return { page: 'guides', guideSlug: '' };
+      if (route.startsWith('guides/')) {
+        const guideSlug = route.slice('guides/'.length);
+        return guideBySlug(guideSlug) ? { page: 'guide', guideSlug } : { page: 'not-found', guideSlug: '' };
+      }
+      return sitePageIds.includes(route as SitePageId)
+        ? { page: route as SitePageId, guideSlug: '' }
+        : { page: 'not-found', guideSlug: '' };
     };
-    const sitePage = ref<SitePageId | 'home'>(routeFromHash());
-    const activeSitePage = computed(() => sitePage.value === 'home' ? sitePages.about : sitePages[sitePage.value]);
+    const initialRoute = routeFromHash();
+    const sitePage = ref<SiteRoute>(initialRoute.page);
+    const activeGuideSlug = ref(initialRoute.guideSlug);
+    const activeGuide = computed(() => guideBySlug(activeGuideSlug.value));
+    const activeSitePage = computed(() => sitePage.value === 'home' || sitePage.value === 'guides' || sitePage.value === 'guide'
+      ? sitePages.about
+      : sitePages[sitePage.value]);
     const currentQuestionIndex = ref(0);
     const answers = ref<Record<number, string>>({});
     const selectedChannelIds = ref<ChannelId[]>([]);
@@ -46,22 +63,70 @@ export default defineComponent({
     const explorerImageUrl = `${import.meta.env.BASE_URL}characters/explorers.png`;
 
     const updateDocumentMetadata = () => {
-      const page = sitePage.value === 'home' ? null : sitePages[sitePage.value];
-      document.title = page ? `${page.title}｜TRIP SYNC` : 'TRIP SYNC｜旅遊人格測驗與行程規劃助手';
-      document.querySelector<HTMLMetaElement>('meta[name="description"]')?.setAttribute(
-        'content',
-        page?.description ?? 'TRIP SYNC 地球探索人格測驗與全球行程規劃助手，依人格、興趣、月份、預算及避雷條件推薦目的地。',
-      );
+      const page = sitePage.value !== 'home' && sitePage.value !== 'guides' && sitePage.value !== 'guide'
+        ? sitePages[sitePage.value]
+        : null;
+      const guide = sitePage.value === 'guide' ? activeGuide.value : null;
+      const title = guide
+        ? `${guide.title}｜TRIP SYNC 旅行指南`
+        : sitePage.value === 'guides'
+          ? '旅行指南｜TRIP SYNC'
+          : page
+            ? `${page.title}｜TRIP SYNC`
+            : 'TRIP SYNC｜旅遊人格測驗與行程規劃助手';
+      const description = guide?.excerpt
+        ?? (sitePage.value === 'guides' ? 'TRIP SYNC 旅行指南：從人格、預算、交通與避雷條件，把目的地走成真正可執行的行程。' : page?.description)
+        ?? 'TRIP SYNC 地球探索人格測驗與全球行程規劃助手，依人格、興趣、月份、預算及避雷條件推薦目的地。';
+      const image = guide
+        ? new URL(`${import.meta.env.BASE_URL}${guide.cover}`, window.location.origin).href
+        : new URL(`${import.meta.env.BASE_URL}characters/explorers.png`, window.location.origin).href;
+      const setMeta = (selector: string, content: string) => document.querySelector<HTMLMetaElement>(selector)?.setAttribute('content', content);
+
+      document.title = title;
+      setMeta('meta[name="description"]', description);
+      setMeta('meta[property="og:title"]', title);
+      setMeta('meta[property="og:description"]', description);
+      setMeta('meta[property="og:type"]', guide ? 'article' : 'website');
+      setMeta('meta[property="og:url"]', window.location.href);
+      setMeta('meta[property="og:image"]', image);
+      setMeta('meta[property="og:image:alt"]', guide?.coverAlt ?? 'TRIP SYNC 四位地球探索人格角色');
+      setMeta('meta[name="twitter:title"]', title);
+      setMeta('meta[name="twitter:description"]', description);
+      setMeta('meta[name="twitter:image"]', image);
+
+      const existingStructuredData = document.querySelector<HTMLScriptElement>('#page-structured-data');
+      if (!guide) {
+        existingStructuredData?.remove();
+        return;
+      }
+      const structuredData = existingStructuredData ?? document.createElement('script');
+      structuredData.id = 'page-structured-data';
+      structuredData.type = 'application/ld+json';
+      structuredData.textContent = JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'BlogPosting',
+        headline: guide.title,
+        description: guide.excerpt,
+        image,
+        dateModified: guide.updatedAt,
+        inLanguage: 'zh-Hant',
+        author: { '@type': 'Person', name: 'Chien-Chien' },
+        publisher: { '@type': 'Organization', name: 'TRIP SYNC' },
+        mainEntityOfPage: window.location.href,
+      });
+      if (!existingStructuredData) document.head.appendChild(structuredData);
     };
 
     const syncSiteRoute = () => {
-      sitePage.value = routeFromHash();
+      const route = routeFromHash();
+      sitePage.value = route.page;
+      activeGuideSlug.value = route.guideSlug;
       if (sitePage.value !== 'home') step.value = 'landing';
       updateDocumentMetadata();
       nextTick(() => window.scrollTo({ top: 0 }));
     };
 
-    const navigateToSitePage = (page: SitePageId | 'home') => {
+    const navigateToSitePage = (page: SitePageId | 'home' | 'guides') => {
       if (page === 'home') step.value = 'landing';
       const nextHash = page === 'home' ? '#/' : `#/${page}`;
       if (window.location.hash === nextHash) {
@@ -71,6 +136,15 @@ export default defineComponent({
         return;
       }
       window.location.hash = nextHash;
+    };
+
+    const navigateToGuide = (slug: string) => {
+      const guide = guideBySlug(slug);
+      if (!guide) {
+        navigateToSitePage('not-found');
+        return;
+      }
+      window.location.hash = `#/guides/${guide.slug}`;
     };
 
     onMounted(() => {
@@ -415,6 +489,7 @@ export default defineComponent({
 
     const alienStyle = (index: number) => ({ marginLeft: `-${index * 100}%` });
     const scrollToArchetypes = () => document.querySelector('#archetypes')?.scrollIntoView({ behavior: 'smooth' });
+    const guideCoverUrl = (guide: TravelGuide) => `${import.meta.env.BASE_URL}${guide.cover}`;
     const resultVariables = computed(() => ({
       '--result-accent': archetype.value.accent,
       '--result-deep': archetype.value.deep,
@@ -425,6 +500,8 @@ export default defineComponent({
       step,
       sitePage,
       activeSitePage,
+      activeGuide,
+      travelGuides,
       questions,
       archetypes,
       channels,
@@ -457,6 +534,7 @@ export default defineComponent({
       shareCardUrl,
       explorerImageUrl,
       navigateToSitePage,
+      navigateToGuide,
       startQuiz,
       selectAnswer,
       nextQuestion,
@@ -471,6 +549,7 @@ export default defineComponent({
       closeResultCardPreview,
       alienStyle,
       scrollToArchetypes,
+      guideCoverUrl,
       resultVariables,
       settingLabel,
     };
@@ -479,7 +558,9 @@ export default defineComponent({
     <main class="app-shell">
       <section v-if="sitePage !== 'home'" class="content-page-shell">
         <SiteHeader :active-page="sitePage" mode="content" @navigate="navigateToSitePage" @start-quiz="startQuiz" />
-        <TrustPage :page="activeSitePage" @navigate="navigateToSitePage" @start-quiz="startQuiz" />
+        <GuidesIndex v-if="sitePage === 'guides'" :guides="travelGuides" @open-guide="navigateToGuide" @start-quiz="startQuiz" />
+        <GuideArticle v-else-if="sitePage === 'guide' && activeGuide" :guide="activeGuide" :guides="travelGuides" @open-guide="navigateToGuide" @open-guides="navigateToSitePage('guides')" @start-quiz="startQuiz" />
+        <TrustPage v-else :page="activeSitePage" @navigate="navigateToSitePage" @start-quiz="startQuiz" />
         <SiteFooter @navigate="navigateToSitePage" />
       </section>
 
@@ -531,6 +612,22 @@ export default defineComponent({
               <img :src="channel.image" :alt="channel.member + ' ' + channel.title" />
               <div><small>{{ channel.member }}</small><h3>{{ channel.title }}</h3><p>{{ channel.role }}</p></div>
             </article>
+          </div>
+        </section>
+
+        <section class="home-guides-section">
+          <div class="section-heading">
+            <div><p class="eyebrow">FIELD NOTES FROM EARTH</p><h2>把靈感變成走得動的路線</h2></div>
+            <div class="home-guides-intro">
+              <p>不是目的地清單，而是從適合誰、交通怎麼接、預算放哪裡開始規劃。</p>
+              <button class="text-button" type="button" @click="navigateToSitePage('guides')">看全部 {{ travelGuides.length }} 篇指南 →</button>
+            </div>
+          </div>
+          <div class="home-guide-grid">
+            <a v-for="guide in travelGuides.slice(0, 3)" :key="guide.slug" :href="'#/guides/' + guide.slug" :style="{ '--guide-accent': guide.accent }" @click.prevent="navigateToGuide(guide.slug)">
+              <img :src="guideCoverUrl(guide)" :alt="guide.coverAlt" />
+              <span><small>{{ guide.destination }} / {{ guide.days }}</small><b>{{ guide.title }}</b><em>{{ guide.kicker }}</em></span>
+            </a>
           </div>
         </section>
 

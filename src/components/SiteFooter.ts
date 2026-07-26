@@ -4,10 +4,10 @@ import type { SitePageId } from '../data/sitePages';
 export default defineComponent({
   name: 'SiteFooter',
   emits: {
-    navigate: (_page: SitePageId | 'home') => true,
+    navigate: (_page: SitePageId | 'home' | 'guides') => true,
   },
   setup(_, { emit }) {
-    const navigate = (page: SitePageId | 'home') => emit('navigate', page);
+    const navigate = (page: SitePageId | 'home' | 'guides') => emit('navigate', page);
     return { navigate };
   },
   template: `
@@ -21,7 +21,7 @@ export default defineComponent({
       </div>
 
       <nav class="site-footer-links" aria-label="網站資訊">
-        <div><b>TRIP SYNC</b><a href="#/about" @click.prevent="navigate('about')">關於我們</a><a href="#/methodology" @click.prevent="navigate('methodology')">推薦方法</a><a href="#/contact" @click.prevent="navigate('contact')">聯絡與更正</a></div>
+        <div><b>TRIP SYNC</b><a href="#/guides" @click.prevent="navigate('guides')">旅行指南</a><a href="#/about" @click.prevent="navigate('about')">關於我們</a><a href="#/methodology" @click.prevent="navigate('methodology')">推薦方法</a><a href="#/contact" @click.prevent="navigate('contact')">聯絡與更正</a></div>
         <div><b>透明資訊</b><a href="#/privacy" @click.prevent="navigate('privacy')">隱私權政策</a><a href="#/affiliate" @click.prevent="navigate('affiliate')">聯盟行銷揭露</a><a href="https://github.com/chienchien6/trip-sync-quiz" target="_blank" rel="noopener noreferrer">GitHub 專案 ↗</a></div>
       </nav>
 
