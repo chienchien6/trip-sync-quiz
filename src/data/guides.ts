@@ -6,12 +6,21 @@ export interface GuideSource {
   note: string;
 }
 
+export interface GuideImage {
+  src: string;
+  alt: string;
+  caption?: string;
+  layout?: 'wide' | 'portrait';
+}
+
 export interface GuideSection {
   id: string;
   title: string;
   paragraphs: string[];
   bullets?: string[];
   callout?: string;
+  image?: GuideImage;
+  imageAfterParagraph?: number;
 }
 
 export interface GuideItineraryDay {
@@ -53,6 +62,7 @@ export interface TravelGuide {
   bookingIdeas: GuideBookingIdea[];
   sources: GuideSource[];
   related: string[];
+  closingImage?: GuideImage;
 }
 
 export const guideCategoryLabels: Record<GuideCategory | 'all', string> = {
@@ -81,13 +91,13 @@ export const travelGuides: TravelGuide[] = [
     destination: '日本・北海道',
     category: 'snow',
     cover: 'guide-covers/hokkaido-ski.jpg',
-    coverAlt: '北海道雪山與第一次學滑雪的旅人',
+    coverAlt: '第一次到北海道富良野滑雪，在雪山景色前留下旅行紀念',
     accent: '#7194c3',
     days: '6–8 天',
     budget: '每日約 NT$6,500–11,000',
     bestTime: '12 月下旬至 3 月',
     readingMinutes: 8,
-    updatedAt: '2026-07-24',
+    updatedAt: '2026-07-27',
     personalityFit: ['安心探路型', '彈性開路型'],
     channelFit: ['TYLER 自然能量', 'LUNA 棲息基地', 'TIMO 航線導航'],
     idealFor: ['第一次碰雪或第一次出國滑雪', '願意安排至少一堂教練課', '想把溫泉與城市休息排進行程'],
@@ -102,10 +112,11 @@ export const travelGuides: TravelGuide[] = [
         title: '第一步不是買雪票，是選旅行基地',
         paragraphs: [
           '想保留札幌逛街與美食，可以住札幌，再選一至兩個有巴士或一日團的雪場；好處是住宿選擇多，缺點是每天通勤。',
-          '想把滑雪當主角，就住雪場或鄰近城鎮。二世谷、留壽都的國際化服務完整，但旺季成本高；旭川周邊與富良野比較適合把在地城市、溫泉和雪場組合起來。',
+          '如果這是第一次滑雪，最省心的做法其實是直接選 ski-in/ski-out 的滑雪飯店，也就是雪場就在飯店旁邊，滑下來就是飯店。飯店若同時提供雪具租借，就能少花很多時間在交通、取還裝備與臨時接駁上。',
+          '我們這次選擇富良野王子飯店，主要原因是它在 ski-in/ski-out 飯店裡相對划算，旁邊就有富良野滑雪學校，飯店本身也有溫泉。對第一次滑雪的人來說，把住宿、雪具、雪道、教練與滑完後放鬆的地方集中在同一個基地，會比每天往返不同雪場輕鬆很多。',
         ],
-        bullets: ['城市型：札幌住宿＋雪場日遊', '沉浸型：雪場住宿 3–4 晚', '平衡型：札幌 2 晚＋雪場 3 晚＋溫泉 1 晚'],
-        callout: '第一次建議只選一個主要雪場。熟悉租借流程與纜車規則，比蒐集雪場數量更重要。',
+        bullets: ['最省心：ski-in/ski-out 飯店＋飯店雪具租借＋旁邊滑雪學校', '城市型：札幌住宿＋雪場日遊', '平衡型：札幌 2 晚＋雪場 3 晚＋溫泉 1 晚'],
+        callout: '實地經驗：第一次滑雪如果預算允許，ski-in/ski-out 真的省下很多交通與取還裝備的時間。我們這次住富良野王子飯店，旁邊就是富良野滑雪學校，飯店內還有溫泉，滑完可以直接泡湯緩解疲勞。把住宿、雪具、雪道、教練與恢復體力的地方集中在同一個基地，對新手很友善。',
       },
       {
         id: 'season',
@@ -119,10 +130,19 @@ export const travelGuides: TravelGuide[] = [
         id: 'lesson-gear',
         title: '教練、雪具與衣物，哪些要先訂',
         paragraphs: [
-          '第一次滑雪建議先預約半天或一天教練課。滑雪板或單板、雪鞋、雪杖可以租；貼身排汗層、保暖中層、滑雪襪與防水手套較適合自備。',
+          '第一次滑雪建議先預約教練課。我們用 email 聯繫富良野滑雪學校，這是日本當地的滑雪學校，教練語言可選日文或英文。若有基礎英文，出發前先上網自學常用滑雪單字，實際上課不會太有問題。',
+          '這次很幸運分配到一位很會給情緒價值的英國教練。教學流程會先設定一段路線，讓我們 5 個人輪流滑下來，再依照每個人的進度給下一段改進目標；不是只照表操課，而是會看你實際卡在哪裡。',
+          '2025 年費用參考為兩天 9:30–15:30，中午休息一小時，總費用 80,250 日幣，5 個人分攤後每人約 NT$3,210，體感相當划算。',
+          '滑雪板或單板、雪鞋、雪杖可以租；貼身排汗層、保暖中層、滑雪襪與防水手套較適合自備。',
           '租借頁面的「一套」未必包含雪衣、護目鏡與安全帽。下單前逐項確認尺寸、領取時間、退還地點與是否能跨日保管。',
         ],
-        bullets: ['安全帽建議列為必備', '確認旅遊保險是否包含滑雪活動', '不要穿兩層厚襪，容易擠壓並造成腳冷', '第一天不安排夜滑或長距離移動'],
+        image: {
+          src: 'guide-images/hokkaido-coach.jpg',
+          alt: '學員與富良野滑雪學校教練在雪場開心合照',
+          caption: '兩天課程結束後，和教練一起留下的雪場紀念照。',
+        },
+        imageAfterParagraph: 1,
+        bullets: ['上課前先查：pizza、french fries、edge、turn、stop、lift 等常用詞', '安全帽建議列為必備', '確認旅遊保險是否包含滑雪活動', '不要穿兩層厚襪，容易擠壓並造成腳冷', '第一天不安排夜滑或長距離移動'],
       },
       {
         id: 'transport',
@@ -161,6 +181,12 @@ export const travelGuides: TravelGuide[] = [
       { label: 'HOKKAIDO LOVE! 雪場資料', url: 'https://www.visit-hokkaido.jp/en/spot/detail_13187.html', note: '初學雪道、租借與雪場季節資訊範例' },
       { label: 'JR Hokkaido 官方票券資訊', url: 'https://www.jrhokkaido.co.jp/global/english/ticket/regular/index.html', note: '交通票券與適用範圍' },
     ],
+    closingImage: {
+      src: 'guide-images/hokkaido-snow-angel.jpg',
+      alt: '旅人在北海道雪地躺下做出雪天使',
+      caption: '最後別忘了留一點時間，只為了在雪地裡好好玩。',
+      layout: 'portrait',
+    },
     related: ['north-island-without-car', 'bali-first-time'],
   },
   {

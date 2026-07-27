@@ -24,10 +24,11 @@ export default defineComponent({
     const relatedGuides = computed(() => props.guide.related
       .map((slug) => props.guides.find((guide) => guide.slug === slug))
       .filter(Boolean) as TravelGuide[]);
+    const articleImageUrl = (src: string) => `${import.meta.env.BASE_URL}${src}`;
     const relatedCoverUrl = (guide: TravelGuide) => `${import.meta.env.BASE_URL}${guide.cover}`;
     const scrollToSection = (id: string) => document.querySelector(`#guide-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
-    return { coverUrl, relatedGuides, relatedCoverUrl, scrollToSection, emit };
+    return { coverUrl, relatedGuides, articleImageUrl, relatedCoverUrl, scrollToSection, emit };
   },
   template: `
     <main class="guide-article" :style="{ '--guide-accent': guide.accent }">
@@ -76,7 +77,17 @@ export default defineComponent({
           <section v-for="(section, index) in guide.sections" :id="'guide-' + section.id" :key="section.id" class="guide-prose-section">
             <span>{{ String(index + 1).padStart(2, '0') }}</span>
             <h2>{{ section.title }}</h2>
-            <p v-for="paragraph in section.paragraphs" :key="paragraph">{{ paragraph }}</p>
+            <template v-for="(paragraph, paragraphIndex) in section.paragraphs" :key="paragraph">
+              <p>{{ paragraph }}</p>
+              <figure
+                v-if="section.image && paragraphIndex === (section.imageAfterParagraph ?? section.paragraphs.length - 1)"
+                class="guide-inline-image"
+                :class="'is-' + (section.image.layout ?? 'wide')"
+              >
+                <img :src="articleImageUrl(section.image.src)" :alt="section.image.alt" loading="lazy" />
+                <figcaption v-if="section.image.caption">{{ section.image.caption }}</figcaption>
+              </figure>
+            </template>
             <ul v-if="section.bullets"><li v-for="bullet in section.bullets" :key="bullet">{{ bullet }}</li></ul>
             <aside v-if="section.callout"><b>TRIP SYNC 提醒</b><p>{{ section.callout }}</p></aside>
           </section>
@@ -107,6 +118,15 @@ export default defineComponent({
             <div class="guide-section-heading"><p class="eyebrow">OFFICIAL SOURCES</p><h2>這篇查核過的資料</h2><p>最後查核：{{ guide.updatedAt }}</p></div>
             <a v-for="source in guide.sources" :key="source.url" :href="source.url" target="_blank" rel="noopener noreferrer"><span>{{ source.label }}</span><small>{{ source.note }}</small><b>↗</b></a>
           </section>
+
+          <figure
+            v-if="guide.closingImage"
+            class="guide-closing-image"
+            :class="'is-' + (guide.closingImage.layout ?? 'wide')"
+          >
+            <img :src="articleImageUrl(guide.closingImage.src)" :alt="guide.closingImage.alt" loading="lazy" />
+            <figcaption v-if="guide.closingImage.caption">{{ guide.closingImage.caption }}</figcaption>
+          </figure>
         </article>
       </div>
 
