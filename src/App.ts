@@ -1,6 +1,7 @@
 import { computed, defineComponent, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 import GlobalPlanner from './components/GlobalPlanner';
 import GuideArticle from './components/GuideArticle';
+import GuidesAdmin from './components/GuidesAdmin';
 import GuidesIndex from './components/GuidesIndex';
 import SiteFooter from './components/SiteFooter';
 import SiteHeader from './components/SiteHeader';
@@ -16,22 +17,23 @@ import {
   questions,
 } from './data/tripSync';
 import { sitePageIds, sitePages } from './data/sitePages';
-import { guideBySlug, travelGuides } from './data/guides';
+import { guideBySlug, publishedTravelGuides } from './data/guides';
 import type { Archetype, ChannelId, Choice, TravelSettingOption } from './types';
 import type { SitePageId } from './data/sitePages';
 import type { TravelGuide } from './data/guides';
 
 type Step = 'landing' | 'quiz' | 'channels' | 'settings' | 'result';
-type SiteRoute = SitePageId | 'home' | 'guides' | 'guide';
+type SiteRoute = SitePageId | 'home' | 'guides' | 'guide' | 'admin';
 
 export default defineComponent({
   name: 'App',
-  components: { GlobalPlanner, GuideArticle, GuidesIndex, SiteFooter, SiteHeader, TrustPage },
+  components: { GlobalPlanner, GuideArticle, GuidesAdmin, GuidesIndex, SiteFooter, SiteHeader, TrustPage },
   setup() {
     const step = ref<Step>('landing');
     const routeFromHash = (): { page: SiteRoute; guideSlug: string } => {
       const route = decodeURIComponent(window.location.hash.replace(/^#\/?/, '')).replace(/\/$/, '');
       if (!route || route === 'home') return { page: 'home', guideSlug: '' };
+      if (route === 'admin') return { page: 'admin', guideSlug: '' };
       if (route === 'guides') return { page: 'guides', guideSlug: '' };
       if (route.startsWith('guides/')) {
         const guideSlug = route.slice('guides/'.length);
@@ -45,7 +47,7 @@ export default defineComponent({
     const sitePage = ref<SiteRoute>(initialRoute.page);
     const activeGuideSlug = ref(initialRoute.guideSlug);
     const activeGuide = computed(() => guideBySlug(activeGuideSlug.value));
-    const activeSitePage = computed(() => sitePage.value === 'home' || sitePage.value === 'guides' || sitePage.value === 'guide'
+    const activeSitePage = computed(() => sitePage.value === 'home' || sitePage.value === 'guides' || sitePage.value === 'guide' || sitePage.value === 'admin'
       ? sitePages.about
       : sitePages[sitePage.value]);
     const currentQuestionIndex = ref(0);
@@ -63,11 +65,13 @@ export default defineComponent({
     const explorerImageUrl = `${import.meta.env.BASE_URL}characters/explorers.png`;
 
     const updateDocumentMetadata = () => {
-      const page = sitePage.value !== 'home' && sitePage.value !== 'guides' && sitePage.value !== 'guide'
+      const page = sitePage.value !== 'home' && sitePage.value !== 'guides' && sitePage.value !== 'guide' && sitePage.value !== 'admin'
         ? sitePages[sitePage.value]
         : null;
       const guide = sitePage.value === 'guide' ? activeGuide.value : null;
-      const title = guide
+      const title = sitePage.value === 'admin'
+        ? '旅行指南後台｜TRIP SYNC'
+        : guide
         ? `${guide.title}｜TRIP SYNC 旅行指南`
         : sitePage.value === 'guides'
           ? '旅行指南｜TRIP SYNC'
@@ -501,7 +505,7 @@ export default defineComponent({
       sitePage,
       activeSitePage,
       activeGuide,
-      travelGuides,
+      publishedTravelGuides,
       questions,
       archetypes,
       channels,
@@ -558,10 +562,11 @@ export default defineComponent({
     <main class="app-shell">
       <section v-if="sitePage !== 'home'" class="content-page-shell">
         <SiteHeader :active-page="sitePage" mode="content" @navigate="navigateToSitePage" @start-quiz="startQuiz" />
-        <GuidesIndex v-if="sitePage === 'guides'" :guides="travelGuides" @open-guide="navigateToGuide" @start-quiz="startQuiz" />
-        <GuideArticle v-else-if="sitePage === 'guide' && activeGuide" :guide="activeGuide" :guides="travelGuides" @open-guide="navigateToGuide" @open-guides="navigateToSitePage('guides')" @start-quiz="startQuiz" />
+        <GuidesAdmin v-if="sitePage === 'admin'" @open-guide="navigateToGuide" @open-guides="navigateToSitePage('guides')" />
+        <GuidesIndex v-else-if="sitePage === 'guides'" :guides="publishedTravelGuides" @open-guide="navigateToGuide" @start-quiz="startQuiz" />
+        <GuideArticle v-else-if="sitePage === 'guide' && activeGuide" :guide="activeGuide" :guides="publishedTravelGuides" @open-guide="navigateToGuide" @open-guides="navigateToSitePage('guides')" @start-quiz="startQuiz" />
         <TrustPage v-else :page="activeSitePage" @navigate="navigateToSitePage" @start-quiz="startQuiz" />
-        <SiteFooter @navigate="navigateToSitePage" />
+        <SiteFooter v-if="sitePage !== 'admin'" @navigate="navigateToSitePage" />
       </section>
 
       <section v-else-if="step === 'landing'" class="landing-page">
@@ -620,11 +625,11 @@ export default defineComponent({
             <div><p class="eyebrow">FIELD NOTES FROM EARTH</p><h2>把靈感變成走得動的路線</h2></div>
             <div class="home-guides-intro">
               <p>不是目的地清單，而是從適合誰、交通怎麼接、預算放哪裡開始規劃。</p>
-              <button class="text-button" type="button" @click="navigateToSitePage('guides')">看全部 {{ travelGuides.length }} 篇指南 →</button>
+              <button class="text-button" type="button" @click="navigateToSitePage('guides')">看全部 {{ publishedTravelGuides.length }} 篇指南 →</button>
             </div>
           </div>
           <div class="home-guide-grid">
-            <a v-for="guide in travelGuides.slice(0, 3)" :key="guide.slug" :href="'#/guides/' + guide.slug" :style="{ '--guide-accent': guide.accent }" @click.prevent="navigateToGuide(guide.slug)">
+            <a v-for="guide in publishedTravelGuides.slice(0, 3)" :key="guide.slug" :href="'#/guides/' + guide.slug" :style="{ '--guide-accent': guide.accent }" @click.prevent="navigateToGuide(guide.slug)">
               <img :src="guideCoverUrl(guide)" :alt="guide.coverAlt" />
               <span><small>{{ guide.destination }} / {{ guide.days }}</small><b>{{ guide.title }}</b><em>{{ guide.kicker }}</em></span>
             </a>

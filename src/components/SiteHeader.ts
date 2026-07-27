@@ -6,7 +6,7 @@ export default defineComponent({
   name: 'SiteHeader',
   props: {
     activePage: {
-      type: String as PropType<SitePageId | 'home' | 'guides' | 'guide'>,
+      type: String as PropType<SitePageId | 'home' | 'guides' | 'guide' | 'admin'>,
       default: 'home',
     },
     mode: {
